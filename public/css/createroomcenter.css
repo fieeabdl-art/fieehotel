@@ -1,0 +1,24 @@
+.room-card{
+    width:600px;
+    margin:40px auto;
+    padding:30px;
+    background:#2d3035;
+    border-radius:12px;
+}
+
+.title{
+    text-align:center;
+    color:#fff;
+    margin-bottom:25px;
+}
+
+.room-card label{
+    color:#fff;
+    margin-bottom:5px;
+}
+
+.room-card .form-control{
+    background:#3b3f45;
+    color:#fff;
+    border:1px solid #555;
+}
