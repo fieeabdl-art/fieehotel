@@ -5,6 +5,11 @@
 @vite(['resources/css/inbox.css','resources/js/inbox.js'])
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
+@php
+    $selectedMessageId = request('message_id', $entries->first()?->id);
+    $selectedEntry = $entries->firstWhere('id', $selectedMessageId) ?? $entries->first();
+@endphp
+
 <div class="container-fluid inbox-container">
 
     <div class="row justify-content-center">
@@ -74,8 +79,7 @@
                     </div>
 
                     {{-- ================= MAIN PANEL ================= --}}
-                    <div class="col-md-9" style="padding:24px;">
-
+                    <div class="col-md-9 inbox-main-shell">
 
                         {{-- // Toolbar: dropdown aksi + kotak pencarian --}}
                         <form method="GET" action="{{ url('/inbox') }}" id="searchForm">
@@ -105,65 +109,82 @@
                             </div>
                         </form>
 
-                        {{-- // Form utama untuk aksi massal (checkbox + submit ke route aksi) --}}
-                        <form method="POST" action="{{ url('/inbox/bulk-action') }}" id="bulkForm">
-                            @csrf
-                            <input type="hidden" name="action" id="bulkActionInput">
+                        <div class="mail-split-layout">
+                            {{-- // Form utama untuk aksi massal (checkbox + submit ke route aksi) --}}
+                            <form method="POST" action="{{ url('/inbox/bulk-action') }}" id="bulkForm" class="mail-list-panel">
+                                @csrf
+                                <input type="hidden" name="action" id="bulkActionInput">
 
-                            @if($entries->count() == 0)
-                                <div class="alert alert-info mb-0">Belum ada pesan masuk.</div>
-                            @else
-                                <div class="list-group">
-                                    @foreach($entries as $entry)
-                                        <div class="list-group-item d-flex align-items-center gap-3 inbox-row {{ $entry->is_read ? '' : 'unread-row' }}">
+                                @if($entries->count() == 0)
+                                    <div class="alert alert-info mb-0">Belum ada pesan masuk.</div>
+                                @else
+                                    <div class="list-group">
+                                        @foreach($entries as $entry)
+                                            <div class="list-group-item d-flex align-items-center gap-3 inbox-row {{ $selectedEntry && $selectedEntry->id == $entry->id ? 'selected-row' : '' }} {{ $entry->is_read ? '' : 'unread-row' }}">
 
-                                            {{-- // Checkbox pilih pesan --}}
-                                            <div class="flex-shrink-0">
-                                                <input type="checkbox" name="ids[]" value="{{ $entry->id }}" class="form-check-input row-checkbox">
+                                                <div class="flex-shrink-0">
+                                                    <input type="checkbox" name="ids[]" value="{{ $entry->id }}" class="form-check-input row-checkbox">
+                                                </div>
+
+                                                <div class="flex-shrink-0">
+                                                    <button type="button"
+                                                            class="btn btn-link p-0 star-toggle {{ ($entry->is_starred ?? false) ? 'text-warning' : 'text-muted' }}"
+                                                            data-entry-id="{{ $entry->id }}"
+                                                            onclick="toggleFlag(this.dataset.entryId, 'star', this)">
+                                                        <i class="bi {{ ($entry->is_starred ?? false) ? 'bi-star-fill' : 'bi-star' }}"></i>
+                                                    </button>
+                                                </div>
+
+                                                <div class="flex-shrink-0">
+                                                    <button type="button"
+                                                            class="btn btn-link p-0 important-toggle {{ ($entry->is_important ?? false) ? 'text-danger' : 'text-muted' }}"
+                                                            data-entry-id="{{ $entry->id }}"
+                                                            onclick="toggleFlag(this.dataset.entryId, 'important', this)">
+                                                        <i class="bi {{ ($entry->is_important ?? false) ? 'bi-bookmark-fill' : 'bi-bookmark' }}"></i>
+                                                    </button>
+                                                </div>
+
+                                                <div class="sender flex-shrink-0">
+                                                    <span class="{{ $entry->is_read ? 'text-muted' : 'fw-bold' }}">{{ $entry->sender_name ?? 'Admin' }}</span>
+                                                </div>
+
+                                                <a href="{{ request()->fullUrlWithQuery(['message_id' => $entry->id]) }}" class="subject text-decoration-none d-flex flex-column" style="min-width:0;">
+                                                    <span class="title {{ $entry->is_read ? 'text-muted' : 'text-dark' }}">{{ $entry->title }}</span>
+                                                    <span class="preview text-muted subject-preview">{{ Illuminate\Support\Str::limit($entry->message, 100) }}</span>
+                                                </a>
+
+                                                <div class="time text-muted small">
+                                                    {{ $entry->created_at->format('d M, H:i') }}
+                                                </div>
                                             </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </form>
 
-                                            {{-- // Toggle Starred --}}
-                                            <div class="flex-shrink-0">
-                                                <button type="button"
-                                                        class="btn btn-link p-0 star-toggle {{ ($entry->is_starred ?? false) ? 'text-warning' : 'text-muted' }}"
-                                                        data-entry-id="{{ $entry->id }}"
-                                                        onclick="toggleFlag(this.dataset.entryId, 'star', this)">
-                                                    <i class="bi {{ ($entry->is_starred ?? false) ? 'bi-star-fill' : 'bi-star' }}"></i>
-                                                </button>
-                                            </div>
-
-                                            {{-- // Toggle Important / bookmark --}}
-                                            <div class="flex-shrink-0">
-                                                <button type="button"
-                                                        class="btn btn-link p-0 important-toggle {{ ($entry->is_important ?? false) ? 'text-danger' : 'text-muted' }}"
-                                                        data-entry-id="{{ $entry->id }}"
-                                                        onclick="toggleFlag(this.dataset.entryId, 'important', this)">
-                                                    <i class="bi {{ ($entry->is_important ?? false) ? 'bi-bookmark-fill' : 'bi-bookmark' }}"></i>
-                                                </button>
-                                            </div>
-
-                                            {{-- // Nama pengirim --}}
-                                            <div class="sender flex-shrink-0">
-                                                <span class="{{ $entry->is_read ? 'text-muted' : 'fw-bold' }}">{{ $entry->sender_name ?? 'Admin' }}</span>
-                                            </div>
-
-                                            {{-- // Judul + isi pesan (klik untuk buka & tandai dibaca) --}}
-                                            <a href="{{ url('/inbox', $entry->id) }}" class="subject text-decoration-none d-flex flex-column" style="min-width:0;">
-                                                <span class="title {{ $entry->is_read ? 'text-muted' : 'text-dark' }}">{{ $entry->title }}</span>
-                                                <span class="preview text-muted subject-preview">{{ Illuminate\Support\Str::limit($entry->message, 100) }}</span>
-                                            </a>
-
-                                            {{-- // Waktu --}}
-                                            <div class="time text-muted small">
-                                                {{ $entry->created_at->format('d M, H:i') }}
-                                            </div>
+                            @if($selectedEntry)
+                                <aside class="message-detail-panel">
+                                    <div class="message-detail-header">
+                                        <div>
+                                            <div class="detail-subject">{{ $selectedEntry->title }}</div>
+                                            <div class="detail-meta">{{ $selectedEntry->sender_name ?? 'Admin' }} &lt;{{ $selectedEntry->sender_email ?? 'no-reply@example.com' }}&gt;</div>
                                         </div>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </form>
+                                        <div class="detail-time">{{ $selectedEntry->created_at->format('d M Y, H:i') }}</div>
+                                    </div>
 
-                        {{-- // Pagination --}}
+                                    <div class="detail-toolbar">
+                                       <a href="{{ url('/inbox') }}" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
+                                       <button type="button" class="btn btn-light btn-sm star-shell {{ ($selectedEntry->is_starred ?? false) ? 'text-warning' : 'text-muted' }}" onclick="toggleFlag({{ $selectedEntry->id }}, 'star', this)"><i class="bi {{ ($selectedEntry->is_starred ?? false) ? 'bi-star-fill' : 'bi-star' }}"></i> Star</button>
+                                       <button type="button" class="btn btn-light btn-sm important-shell {{ ($selectedEntry->is_important ?? false) ? 'text-danger' : 'text-muted' }}" onclick="toggleFlag({{ $selectedEntry->id }}, 'important', this)"><i class="bi {{ ($selectedEntry->is_important ?? false) ? 'bi-bookmark-fill' : 'bi-bookmark' }}"></i> Important</button>
+                                    </div>
+
+                                    <div class="detail-body-wrap">
+                                        <div class="detail-body">{!! nl2br(e($selectedEntry->message)) !!}</div>
+                                    </div>
+                                </aside>
+                            @endif
+                        </div>
+
                         @if($entries->count() > 0)
                             <div class="d-flex justify-content-center mt-4">
                                 {{ $entries->appends(request()->query())->links() }}

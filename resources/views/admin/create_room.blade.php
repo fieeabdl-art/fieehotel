@@ -24,74 +24,7 @@
         {{-- ================= SIDEBAR START (  admin/sidebarA.blade.php) ================= --}}
       @include('admin.sidebarA')
 
-<div class="page-content">
-
-    <div class="page-header">
-
-        <div class="container-fluid">
-
-            <div class="room-card">
-
-                <h2 class="title">Tambah Ruangan</h2>
-
-                <form action="{{ url('add_room') }}" method="POST" enctype="multipart/form-data">
-
-                    @csrf
-
-                    <div class="mb-3">
-                        <label>Room Title</label>
-                        <input type="text" name="title" class="form-control">
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Description</label>
-                        <textarea name="description" class="form-control" rows="4"></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Price</label>
-                        <input type="number" name="price" class="form-control">
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Room Type</label>
-
-                        <select name="type" class="form-control">
-                            <option value="regular">Regular</option>
-                            <option value="premium">Premium</option>
-                            <option value="deluxe">Deluxe</option>
-                        </select>
-
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Free Wifi</label>
-
-                        <select name="wifi" class="form-control">
-                            <option value="yes">Yes</option>
-                            <option value="no">No</option>
-                        </select>
-
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Upload Image</label>
-                        <input type="file" name="image" class="form-control">
-                    </div>
-
-                    <button class="btn btn-primary w-100">
-                        Add Room
-                    </button>
-
-                </form>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
+pp
                 {{-- ================= FOOTER START ( admin/footerA.blade.php) ================= --}}
               
                 {{-- ================= FOOTER END ================= --}}
